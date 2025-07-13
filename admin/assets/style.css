@@ -27,8 +27,8 @@ body {
 
 .sidebar ul {
     list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0;
 }
 
 .sidebar ul li a {
@@ -38,7 +38,7 @@ body {
     text-decoration: none;
 }
 
-.sidebar ul li a:hover {
+.sidebar ul li a.active, .sidebar ul li a:hover {
     background-color: #34495e;
 }
 
@@ -50,11 +50,34 @@ body {
 
 .header {
     background-color: #ecf0f1;
-    padding: 15px 20px;
+    padding: 10px 20px;
     border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 #main-content {
     padding: 20px;
     overflow: auto;
+}
+
+/* Responsive: hide sidebar on small screens */
+@media (max-width: 768px) {
+    .dashboard {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        display: flex;
+        overflow-x: auto;
+    }
+    .sidebar ul {
+        display: flex;
+        width: 100%;
+    }
+    .sidebar ul li a {
+        flex: 1;
+        text-align: center;
+    }
 }
