@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once "../db.php";
 
 if ($_SERVER['REQUEST_METHOD']=='POST'){
@@ -7,7 +8,12 @@ if ($_SERVER['REQUEST_METHOD']=='POST'){
              ->execute([$_POST['name'], $_POST['phone']]);
     }
     if(isset($_POST['delete'])){
-        $conn->prepare("DELETE FROM drivers WHERE driver_id=?")->execute([$_POST['driver_id']]);
+        $conn->prepare("DELETE FROM drivers WHERE driver_id=?")
+             ->execute([$_POST['driver_id']]);
+    }
+    if(isset($_POST['edit'])){
+        $conn->prepare("UPDATE drivers SET name=?, phone=? WHERE driver_id=?")
+             ->execute([$_POST['name'], $_POST['phone'], $_POST['driver_id']]);
     }
 }
 
@@ -22,13 +28,21 @@ $drivers = $conn->query("SELECT * FROM drivers")->fetchAll(PDO::FETCH_ASSOC);
     Phone: <input name="phone">
     <button name="add">Add Driver</button>
 </form>
-<table>
-<tr><th>ID</th><th>Name</th><th>Phone</th><th>Action</th></tr>
+<table border="1">
+<tr><th>ID</th><th>Name</th><th>Phone</th><th>Actions</th></tr>
 <?php foreach($drivers as $d): ?>
 <tr>
-<td><?=$d['driver_id']?></td><td><?=$d['name']?></td><td><?=$d['phone']?></td>
+<td><?=$d['driver_id']?></td>
+<td><?=$d['name']?></td>
+<td><?=$d['phone']?></td>
 <td>
-<form method="POST">
+<form method="POST" style="display:inline;">
+    <input type="hidden" name="driver_id" value="<?=$d['driver_id']?>">
+    Name: <input name="name" value="<?=$d['name']?>" required>
+    Phone: <input name="phone" value="<?=$d['phone']?>" required>
+    <button name="edit">Edit</button>
+</form>
+<form method="POST" style="display:inline;">
     <input type="hidden" name="driver_id" value="<?=$d['driver_id']?>">
     <button name="delete">Delete</button>
 </form>

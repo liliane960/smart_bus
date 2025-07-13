@@ -1,4 +1,3 @@
-<?php require_once "../db.php"; ?>
 <?php
 session_start();
 if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
@@ -6,6 +5,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 ?>
+<!-- <?php require_once "../db.php"; ?> -->
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,6 +31,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
         <header class="header">
             <h1>Dashboard</h1>
             <div>
+                <h2>Welcome <?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)</h2>
+                <!-- <a href="../logout.php">Logout</a> -->
                 <a href="../logout.php" class="logout">Logout</a>
             </div>
             <div id="datetime"></div>
