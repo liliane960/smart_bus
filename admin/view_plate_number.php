@@ -1,80 +1,53 @@
 <?php
-// admin/view_logs.php
 require_once '../db.php';
 
-try {
-    $stmt = $conn->query("SELECT id, bus_id, event, passenger_count, status, created_at FROM bus_logs ORDER BY created_at DESC");
-    $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("Database error: " . $e->getMessage());
-}
+// Fetch only overloading notifications
+$sql = "SELECT id, bus_id, event, passenger_count, status, created_at 
+        FROM bus_logs 
+        WHERE status = 'overloading' 
+        ORDER BY created_at DESC";
+$stmt = $conn->prepare($sql);
+$stmt->execute();
+$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Bus Logs</title>
-    <link rel="stylesheet" href="../assets/style.css" />
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        .status-normal {
-            color: green;
-            font-weight: bold;
-        }
-        .status-full {
-            color: orange;
-            font-weight: bold;
-        }
-        .status-overloading {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Overloading Notifications</title>
+<style>
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: center; }
+    th { background: #f0f0f0; }
+</style>
 </head>
 <body>
-    <h1>Bus Logs</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Bus ID</th>
-                <th>Event</th>
-                <th>Passenger Count</th>
-                <th>Status</th>
-                <th>Created At</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if ($logs): ?>
-                <?php foreach ($logs as $log): ?>
-                    <?php
-                        // Decide CSS class based on status
-                        $statusClass = '';
-                        if ($log['status'] == 'normal') $statusClass = 'status-normal';
-                        elseif ($log['status'] == 'full') $statusClass = 'status-full';
-                        elseif ($log['status'] == 'overloading') $statusClass = 'status-overloading';
-                    ?>
-                    <tr>
-                        <td><?= htmlspecialchars($log['id']) ?></td>
-                        <td><?= htmlspecialchars($log['bus_id']) ?></td>
-                        <td><?= htmlspecialchars($log['event']) ?></td>
-                        <td><?= htmlspecialchars($log['passenger_count']) ?></td>
-                        <td class="<?= $statusClass ?>"><?= htmlspecialchars($log['status']) ?></td>
-                        <td><?= htmlspecialchars($log['created_at']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr><td colspan="6">No logs found.</td></tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+<h2>Overloading Notifications</h2>
+<table>
+<thead>
+    <tr>
+        <th>Plate</th>
+        <th>Message</th>
+        <th>Status</th>
+        <th>Time</th>
+    </tr>
+</thead>
+<tbody>
+<?php if ($notifications): ?>
+    <?php foreach ($notifications as $note): ?>
+        <tr>
+            <td><?= htmlspecialchars($note['bus_id']) // replace with plate_number if joined ?></td>
+            <td>
+                <?= htmlspecialchars("Event: {$note['event']}, Passengers: {$note['passenger_count']}") ?>
+            </td>
+            <td><?= htmlspecialchars($note['status']) ?></td>
+            <td><?= htmlspecialchars($note['created_at']) ?></td>
+        </tr>
+    <?php endforeach; ?>
+<?php else: ?>
+    <tr><td colspan="4">No overloading notifications found.</td></tr>
+<?php endif; ?>
+</tbody>
+</table>
 </body>
 </html>

@@ -1,9 +1,9 @@
 <?php
 // session_start();
-if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'police') {
-    header("Location: ../login.php");
-    exit;
-}
+// if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'police') {
+//     header("Location: ../login.php");
+//     exit;
+// }
 ?>
 <?php require_once "../db.php"; ?>
 
@@ -21,7 +21,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'police') {
         <h2>Smart Bus</h2>
         <ul>
             <li><a href="#" data-page="view_logs.php" class="active">View Logs</a></li>
-            <li><a href="#" data-page="view_plate_number.php">View Plate Number</a></li>
+            <!-- <li><a href="#" data-page="view_plate_number.php">View Plate Number</a></li> -->
             <li><a href="#" data-page="view_notifications.php">View Notifications</a></li>
         </ul>
     </aside>
@@ -29,7 +29,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'police') {
         <header class="header">
             <h1>Dashboard</h1>
             <div>
-                <h2>Welcome <?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)</h2>
+                <!-- <h2>Welcome <?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)</h2> -->
                 <a href="../logout.php" class="logout">Logout</a>
             </div>
             <div id="datetime"></div>
