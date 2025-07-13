@@ -59,6 +59,15 @@ body {
     flex-direction: column;
 }
 
+/* .header {
+    background-color: #ecf0f1;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+} */
+
 .header {
     background-color: #ecf0f1;
     padding: 10px 20px;
@@ -66,6 +75,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;  /* keep header fixed on scroll */
+    top: 0;
+    z-index: 10;       /* ensure it stays on top */
+     /* top: 0; */
+    overflow-y: auto;
 }
 
 #main-content {
