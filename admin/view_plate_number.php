@@ -14,7 +14,7 @@ try {
 <head>
     <meta charset="UTF-8" />
     <title>Bus Logs</title>
-    <link rel="stylesheet" href="assets/style.css" />
+    <link rel="stylesheet" href="../assets/style.css" />
     <style>
         table {
             border-collapse: collapse;

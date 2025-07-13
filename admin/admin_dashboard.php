@@ -1,10 +1,18 @@
 <?php require_once "../db.php"; ?>
+<?php
+session_start();
+if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.php");
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>Smart Bus Dashboard</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
 <div class="dashboard">
@@ -22,7 +30,7 @@
         <header class="header">
             <h1>Dashboard</h1>
             <div>
-                <a href="logout.php" class="logout">Logout</a>
+                <a href="../logout.php" class="logout">Logout</a>
             </div>
             <div id="datetime"></div>
         </header>
@@ -31,6 +39,6 @@
         </main>
     </div>
 </div>
-<script src="assets/script.js"></script>
+<script src="../assets/script.js"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ $buses = $conn->query("SELECT * FROM buses")->fetchAll(PDO::FETCH_ASSOC);
 $drivers = $conn->query("SELECT * FROM drivers")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <html>
-<head><link rel="stylesheet" href="assets/style.css"></head>
+<head><link rel="stylesheet" href="../assets/style.css"></head>
 <body>
 <h2>Manage Buses</h2>
 <form method="POST">

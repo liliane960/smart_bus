@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST'){
 $drivers = $conn->query("SELECT * FROM drivers")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <html>
-<head><link rel="stylesheet" href="assets/style.css"></head>
+<head><link rel="stylesheet" href="../assets/style.css"></head>
 <body>
 <h2>Manage Drivers</h2>
 <form method="POST">
