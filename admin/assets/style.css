@@ -10,13 +10,24 @@ body {
     display: flex;
     min-height: 100vh;
 }
-
 .sidebar {
     width: 220px;
     background-color: #2c3e50;
     color: white;
     flex-shrink: 0;
+    height: 100vh;             /* make it full height of viewport */
+    position: sticky;         /* keep it sticky */
+    top: 0;                   /* stick to top */
+    overflow-y: auto;         /* scroll inside sidebar if needed */
 }
+
+
+/* .sidebar {
+    width: 220px;
+    background-color: #2c3e50;
+    color: white;
+    flex-shrink: 0;
+} */
 
 .sidebar h2 {
     text-align: center;

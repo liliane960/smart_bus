@@ -21,6 +21,9 @@
     <div class="main">
         <header class="header">
             <h1>Dashboard</h1>
+            <div>
+                <a href="logout.php" class="logout">Logout</a>
+            </div>
             <div id="datetime"></div>
         </header>
         <main id="main-content">
