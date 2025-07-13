@@ -1,11 +1,11 @@
 <?php
-session_start();
-if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../login.php");
-    exit;
-}
-?>
-<!-- <?php require_once "../db.php"; ?> -->
+// session_start();
+// if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
+//     header("Location: ../login.php");
+//     exit;
+// }
+// ?>
+<?php require_once "../db.php"; ?>
 
 
 <!DOCTYPE html>
@@ -31,7 +31,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['role'] !== 'admin') {
         <header class="header">
             <h1>Dashboard</h1>
             <div>
-                <h2>Welcome <?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)</h2>
+                <!-- <h2>Welcome <?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['role']) ?>)</h2> -->
                 <!-- <a href="../logout.php">Logout</a> -->
                 <a href="../logout.php" class="logout">Logout</a>
             </div>

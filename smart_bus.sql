@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 13, 2025 at 03:27 AM
+-- Generation Time: Jul 13, 2025 at 04:47 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -110,7 +110,8 @@ INSERT INTO `bus_logs` (`id`, `bus_id`, `event`, `passenger_count`, `status`, `c
 (44, 1, 'exit', 16, 'normal', '2025-07-13 03:06:33'),
 (45, 1, 'entry', 17, 'normal', '2025-07-13 03:10:50'),
 (46, 1, 'entry', 18, 'full', '2025-07-13 03:11:01'),
-(47, 1, 'entry', 19, 'full', '2025-07-13 03:11:05');
+(47, 1, 'entry', 19, 'full', '2025-07-13 03:11:05'),
+(48, 1, 'entry', 5, 'normal', '2025-07-13 04:29:29');
 
 -- --------------------------------------------------------
 
@@ -129,7 +130,7 @@ CREATE TABLE `drivers` (
 --
 
 INSERT INTO `drivers` (`driver_id`, `name`, `phone`) VALUES
-(1, 'John Doe', '+250780000000'),
+(1, 'John Doe', '+250780000065'),
 (2, 'claude', '+250783456845');
 
 -- --------------------------------------------------------
@@ -177,6 +178,29 @@ CREATE TABLE `passenger_logs` (
   `status` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('admin','police','driver') NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`user_id`, `username`, `password`, `role`) VALUES
+(1, 'admin', '$2y$10$6SS8vR9K0opXDCb6vfsqJeEN6mCGIBmrqC0tCKawC26fttXPoz5jC', 'admin'),
+(2, 'liliane', '$2y$10$qv5BQkU1hzK6rCkT34K1VOE.M1pLrziuh/.N28pB6EBK33FfZzC6G', 'police'),
+(3, 'jesus_driver', '$2y$10$qv5BQkU1hzK6rCkT34K1VOE.M1pLrziuh/.N28pB6EBK33FfZzC6G', 'driver'),
+(4, 'admin1', '$2y$10$6SS8vR9K0opXDCb6vfsqJeEN6mCGIBmrqC0tCKawC26fttXPoz5jC', 'admin');
+
 --
 -- Indexes for dumped tables
 --
@@ -220,6 +244,13 @@ ALTER TABLE `passenger_logs`
   ADD KEY `bus_id` (`bus_id`);
 
 --
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`user_id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -233,7 +264,7 @@ ALTER TABLE `buses`
 -- AUTO_INCREMENT for table `bus_logs`
 --
 ALTER TABLE `bus_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT for table `drivers`
@@ -258,6 +289,12 @@ ALTER TABLE `notifications`
 --
 ALTER TABLE `passenger_logs`
   MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
