@@ -17,7 +17,7 @@ const int sensorOut = D4;
 // WiFi Configuration
 const char* ssid = "HUAWEI-B310-68AD";
 const char* password = "YALJG3Y7FH6";
-const String serverURL = "http://192.168.10.113/smart-bus/api/hardware_api.php";
+const String serverURL = "http://192.168.10.110/smart-bus/api/hardware_api.php";
 
 // System Variables
 int count = 0;
