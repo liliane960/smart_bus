@@ -22,17 +22,20 @@ const String serverURL = "http://192.168.10.110/smart-bus/api/hardware_api.php";
 // System Variables
 int count = 0;
 const int maxCount = 18;
+String lastStatus = "normal";  // Track last status
 
 // LED and Buzzer Pins
 const int led1 = D3;
 const int buzzer = D8;
 const int led2 = D0;
 
-// Timing for repeated SMS
+// Timing and flags
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 500;
+
 unsigned long lastSMSTime = 0;
 const unsigned long smsInterval = 10000;
 
-// Buzzer logic
 bool notifiedFull = false;
 bool buzzerOffAfterFull = false;
 unsigned long fullTime = 0;
@@ -62,52 +65,77 @@ void setup() {
 }
 
 void loop() {
-  static unsigned long lastDebounceTime = 0;
-  const unsigned long debounceDelay = 500;
-
   digitalWrite(led1, HIGH);
 
-  // Entry
+  // Entry detection
   if (digitalRead(sensorIn) == LOW && millis() - lastDebounceTime > debounceDelay) {
     count++;
+
+    String status = getStatus();
     updateDisplay("Passenger In");
-    sendToServer("entry", count, (count >= maxCount ? "full" : "normal"));
+    sendToServer("entry", count, status);
     lastDebounceTime = millis();
   }
 
-  // Exit
+  // Exit detection
   if (digitalRead(sensorOut) == LOW && count > 0 && millis() - lastDebounceTime > debounceDelay) {
     count--;
+
+    String status = getStatus();
     updateDisplay("Passenger Out");
-    sendToServer("exit", count, "normal");
+    sendToServer("exit", count, status);
     lastDebounceTime = millis();
+  }
+
+  // Determine current status
+  String currentStatus = getStatus();
+
+  // Send SMS once when status changes into full or overloading
+  if ((currentStatus == "full" || currentStatus == "overloading") && currentStatus != lastStatus) {
+    sendSMS();
+    lastSMSTime = millis();
   }
 
   // Alert logic
-  if (count >= maxCount) {
+  if (currentStatus == "full") {
     digitalWrite(led2, HIGH);
+
     if (!notifiedFull) {
-      digitalWrite(buzzer, HIGH);
+      digitalWrite(buzzer, HIGH);  // Buzz for 3 seconds
       fullTime = millis();
       notifiedFull = true;
       buzzerOffAfterFull = false;
-      sendSMS();
-      lastSMSTime = millis();
-      lcd.setCursor(0, 0); lcd.print("Vehicle is full.");
+      lcd.setCursor(0, 0); lcd.print("Vehicle is full. ");
     }
-    if (!buzzerOffAfterFull && millis() - fullTime >= 5000) {
-      digitalWrite(buzzer, LOW); buzzerOffAfterFull = true;
+
+    if (!buzzerOffAfterFull && millis() - fullTime >= 3000) {
+      digitalWrite(buzzer, LOW);
+      buzzerOffAfterFull = true;
     }
-    if (millis() - lastSMSTime >= smsInterval) {
-      sendSMS(); lastSMSTime = millis();
-    }
-  } else {
-    digitalWrite(led2, LOW); digitalWrite(buzzer, LOW);
+
+  } else if (currentStatus == "overloading") {
+    digitalWrite(led2, HIGH);
+    digitalWrite(buzzer, LOW);   // Don't buzz when overloaded
+    lcd.setCursor(0, 0); lcd.print("Overloading!!    ");
+
+  } else { // normal
+    digitalWrite(led2, LOW);
+    digitalWrite(buzzer, LOW);
     lcd.setCursor(0, 0); lcd.print("Passenger Count ");
-    notifiedFull = false; buzzerOffAfterFull = false;
+    notifiedFull = false;
+    buzzerOffAfterFull = false;
   }
 
+  // Update last status
+  lastStatus = currentStatus;
+
   delay(100);
+}
+
+String getStatus() {
+  if (count == maxCount) return "full";
+  else if (count > maxCount) return "overloading";
+  else return "normal";
 }
 
 void sendToServer(String event, int count, String status) {
@@ -146,7 +174,7 @@ void sendSMS() {
   Serial.println("Sending SMS...");
   sim800.println("AT+CMGF=1"); waitForResponse(1000);
   sim800.println("AT+CMGS=\"+250780830355\""); waitForResponse(1000);
-  sim800.println("Alert: Vehicle full/overload. Count: " + String(count));
+  sim800.println("Alert: Vehicle status changed. Count: " + String(count));
   delay(100); sim800.write(26);
   waitForResponse(2000);
 }

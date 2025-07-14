@@ -3,57 +3,16 @@ require_once '../db.php';
 
 session_start();
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+// Check if user is logged in and is police
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'police') {
     header('Location: ../login.php');
     exit();
 }
 
-$message = '';
-
-// Handle POST form submissions for comments
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['notification_id'], $_POST['comment'])) {
-        // Update existing comment
-        $notifId = trim($_POST['notification_id']);
-        $comment = trim($_POST['comment']);
-
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $update = $conn->prepare("UPDATE notifications SET comment = :comment WHERE notification_id = :id");
-            $update->execute([':comment' => $comment, ':id' => $notifId]);
-            $message = 'Comment updated successfully.';
-        }
-    } elseif (isset($_POST['bus_id'], $_POST['new_comment'])) {
-        // Insert new notification
-        $busId = trim($_POST['bus_id']);
-        $comment = trim($_POST['new_comment']);
-
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $messageText = "Overloading detected";
-            $status = 'pending';
-
-            $insert = $conn->prepare("INSERT INTO notifications 
-                (bus_id, message, status, comment) 
-                VALUES (:bus_id, :message, :status, :comment)");
-            $insert->execute([
-                ':bus_id' => $busId,
-                ':message' => $messageText,
-                ':status' => $status,
-                ':comment' => $comment
-            ]);
-            $message = 'Notification added successfully.';
-        }
-    }
-}
-
-// Initialize search variable
+// get search input
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build base SQL to get overloading notifications with comments
+// build SQL to get notifications with comments
 $sql = "SELECT n.notification_id, n.bus_id, b.plate_number, n.message, n.sent_at, n.status, n.comment,
                bl.passenger_count, bl.event, bl.created_at as log_time
         FROM notifications n
@@ -61,7 +20,6 @@ $sql = "SELECT n.notification_id, n.bus_id, b.plate_number, n.message, n.sent_at
         LEFT JOIN bus_logs bl ON bl.bus_id = n.bus_id AND bl.status = 'overloading'
         WHERE n.message LIKE '%overloading%'";
 
-// If search entered, add condition
 $params = [];
 if ($search !== '') {
     $sql .= " AND b.plate_number LIKE :search";
@@ -70,6 +28,7 @@ if ($search !== '') {
 
 $sql .= " ORDER BY n.sent_at DESC";
 
+// run query
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -97,7 +56,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Overloading Notifications - Admin</title>
+<title>Overloading Notifications - Police</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <style>
     body { padding: 20px; }
@@ -106,11 +65,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 <div class="container">
-    <h2 class="mb-4">Overloading Notifications - Admin</h2>
-
-    <?php if ($message): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
-    <?php endif; ?>
+    <h2 class="mb-4">Overloading Notifications - Police</h2>
 
     <form method="get" class="row g-3 mb-3">
         <div class="col-auto">
@@ -130,7 +85,6 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                     <th>Status</th>
                     <th>Comment</th>
                     <th>Time</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -140,17 +94,8 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($note['plate_number']) ?></td>
                             <td><?= htmlspecialchars($note['message']) ?></td>
                             <td><?= htmlspecialchars($note['status']) ?></td>
-                            <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                    <input type="text" name="comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-success">Save</button>
-                                </form>
-                            </td>
+                            <td><?= htmlspecialchars($note['comment'] ?? 'No comment') ?></td>
                             <td><?= htmlspecialchars($note['sent_at']) ?></td>
-                            <td>
-                                <small class="text-success">Comment exists</small>
-                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -161,23 +106,14 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($bus['plate_number']) ?></td>
                             <td><?= htmlspecialchars("Event: {$bus['event']}, Passengers: {$bus['passenger_count']}") ?></td>
                             <td><?= htmlspecialchars($bus['status']) ?></td>
-                            <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="bus_id" value="<?= htmlspecialchars($bus['bus_id']) ?>" />
-                                    <input type="text" name="new_comment" placeholder="Add comment" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-primary">Add</button>
-                                </form>
-                            </td>
+                            <td><em>No comment added yet</em></td>
                             <td><?= htmlspecialchars($bus['created_at']) ?></td>
-                            <td>
-                                <small class="text-muted">Add comment</small>
-                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
                 
                 <?php if (!$notifications && !$overloadingBuses): ?>
-                    <tr><td colspan="6">No overloading notifications found.</td></tr>
+                    <tr><td colspan="5">No overloading notifications found.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

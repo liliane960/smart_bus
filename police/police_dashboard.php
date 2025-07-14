@@ -21,7 +21,7 @@
         <h2>Smart Bus</h2>
         <ul>
             <li><a href="#" data-page="view_logs.php" class="active">View Logs</a></li>
-            <!-- <li><a href="#" data-page="view_plate_number.php">View Plate Number</a></li> -->
+            <li><a href="#" data-page="overloading_notifications.php">overloading notifications</a></li>
             <li><a href="#" data-page="view_notifications.php">View Notifications</a></li>
         </ul>
     </aside>

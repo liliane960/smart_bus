@@ -1,18 +1,28 @@
 <?php
-require_once '../db.php';
+// === START DEBUG SETTINGS ===
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+// === END DEBUG SETTINGS ===
 
 session_start();
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+// Adjust path if needed - make sure db.php sets $conn as PDO
+require_once '../db.php';
+
+// Check if user is logged in and is driver
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'driver') {
     header('Location: ../login.php');
     exit();
 }
 
+$userRole = $_SESSION['role'];
+$canComment = in_array($userRole, ['admin', 'driver']);
+
 $message = '';
 
-// Handle POST form submissions for comments
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle POST form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canComment) {
     if (isset($_POST['notification_id'], $_POST['comment'])) {
         // Update existing comment
         $notifId = trim($_POST['notification_id']);
@@ -50,10 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Initialize search variable
+// Get search term if any
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build base SQL to get overloading notifications with comments
+// Fetch overloading notifications and related data
 $sql = "SELECT n.notification_id, n.bus_id, b.plate_number, n.message, n.sent_at, n.status, n.comment,
                bl.passenger_count, bl.event, bl.created_at as log_time
         FROM notifications n
@@ -61,13 +71,11 @@ $sql = "SELECT n.notification_id, n.bus_id, b.plate_number, n.message, n.sent_at
         LEFT JOIN bus_logs bl ON bl.bus_id = n.bus_id AND bl.status = 'overloading'
         WHERE n.message LIKE '%overloading%'";
 
-// If search entered, add condition
 $params = [];
 if ($search !== '') {
     $sql .= " AND b.plate_number LIKE :search";
     $params[':search'] = "%$search%";
 }
-
 $sql .= " ORDER BY n.sent_at DESC";
 
 $stmt = $conn->prepare($sql);
@@ -96,8 +104,9 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Overloading Notifications - Admin</title>
+<meta charset="UTF-8" />
+<title>Overloading Notifications - Driver</title>
+<!-- Bootstrap 5 CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <style>
     body { padding: 20px; }
@@ -106,7 +115,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 <div class="container">
-    <h2 class="mb-4">Overloading Notifications - Admin</h2>
+    <h2 class="mb-4">Overloading Notifications - Driver</h2>
 
     <?php if ($message): ?>
         <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
@@ -130,7 +139,9 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                     <th>Status</th>
                     <th>Comment</th>
                     <th>Time</th>
-                    <th>Action</th>
+                    <?php if ($canComment): ?>
+                        <th>Action</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -141,16 +152,22 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($note['message']) ?></td>
                             <td><?= htmlspecialchars($note['status']) ?></td>
                             <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                    <input type="text" name="comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-success">Save</button>
-                                </form>
+                                <?php if ($canComment): ?>
+                                    <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
+                                        <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
+                                        <input type="text" name="comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" class="form-control form-control-sm" required />
+                                        <button type="submit" class="btn btn-sm btn-success">Save</button>
+                                    </form>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($note['comment'] ?? '') ?>
+                                <?php endif; ?>
                             </td>
                             <td><?= htmlspecialchars($note['sent_at']) ?></td>
-                            <td>
-                                <small class="text-success">Comment exists</small>
-                            </td>
+                            <?php if ($canComment): ?>
+                                <td>
+                                    <small class="text-success">Comment exists</small>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -162,28 +179,35 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars("Event: {$bus['event']}, Passengers: {$bus['passenger_count']}") ?></td>
                             <td><?= htmlspecialchars($bus['status']) ?></td>
                             <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="bus_id" value="<?= htmlspecialchars($bus['bus_id']) ?>" />
-                                    <input type="text" name="new_comment" placeholder="Add comment" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-primary">Add</button>
-                                </form>
+                                <?php if ($canComment): ?>
+                                    <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
+                                        <input type="hidden" name="bus_id" value="<?= htmlspecialchars($bus['bus_id']) ?>" />
+                                        <input type="text" name="new_comment" placeholder="Add comment" class="form-control form-control-sm" required />
+                                        <button type="submit" class="btn btn-sm btn-primary">Add</button>
+                                    </form>
+                                <?php else: ?>
+                                    <em>No comment</em>
+                                <?php endif; ?>
                             </td>
                             <td><?= htmlspecialchars($bus['created_at']) ?></td>
-                            <td>
-                                <small class="text-muted">Add comment</small>
-                            </td>
+                            <?php if ($canComment): ?>
+                                <td>
+                                    <small class="text-muted">Add comment</small>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
                 
                 <?php if (!$notifications && !$overloadingBuses): ?>
-                    <tr><td colspan="6">No overloading notifications found.</td></tr>
+                    <tr><td colspan="<?= $canComment ? 6 : 5 ?>">No overloading notifications found.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
+<!-- Bootstrap 5 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
