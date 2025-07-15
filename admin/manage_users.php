@@ -101,7 +101,7 @@ foreach ($users as $user) {
 <title>Manage Users - Admin</title>
 <link rel="stylesheet" href="../assets/style.css">
 <!-- <link rel="stylesheet" href="../assets/style.css"> -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" /> -->
 <style>
     table { border-collapse: collapse; width: 100%; }
     th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
@@ -130,10 +130,6 @@ foreach ($users as $user) {
         <div class="stat-card">
             <h3><?= count($users) ?></h3>
             <p>Total Users</p>
-        </div>
-        <div class="stat-card">
-            <h3><?= $role_counts['admin'] ?></h3>
-            <p>Admins</p>
         </div>
         <div class="stat-card">
             <h3><?= $role_counts['driver'] ?></h3>

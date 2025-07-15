@@ -87,7 +87,7 @@ $unassigned_drivers = $total_drivers - $assigned_drivers;
 <meta charset="UTF-8">
 <title>Manage Drivers - Admin</title>
 <link rel="stylesheet" href="../assets/style.css">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" /> -->
 <style>
     table { border-collapse: collapse; width: 100%; }
     th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
@@ -99,33 +99,10 @@ $unassigned_drivers = $total_drivers - $assigned_drivers;
 </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1><i class="fas fa-user-tie"></i> Manage Drivers</h1>
-        <p>Add, edit, and manage driver information including their bus assignments.</p>
-    </div>
 
-    <?php if ($message): ?>
-        <div class="alert <?= strpos($message, 'Error') !== false ? 'alert-danger' : 'alert-success' ?>">
-            <?= htmlspecialchars($message) ?>
-        </div>
-    <?php endif; ?>
 
-    <!-- Statistics -->
-    <div class="stats">
-        <div class="stat-card">
-            <h3><?= $total_drivers ?></h3>
-            <p>Total Drivers</p>
-        </div>
-        <div class="stat-card">
-            <h3><?= $assigned_drivers ?></h3>
-            <p>Assigned to Buses</p>
-        </div>
-        <div class="stat-card">
-            <h3><?= $unassigned_drivers ?></h3>
-            <p>Unassigned</p>
-        </div>
-    </div>
+    
+    
 
     <!-- Add Driver Form -->
     <div class="form-section">

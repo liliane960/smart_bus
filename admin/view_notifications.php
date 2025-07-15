@@ -100,7 +100,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <head>
 <meta charset="UTF-8">
 <title>Overloading Notifications - Admin</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" /> -->
 <style>
     table { border-collapse: collapse; width: 100%; }
     th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
