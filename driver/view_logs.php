@@ -1,5 +1,5 @@
 <?php
-require_once '../db.php';
+require_once '../database/db.php';
 
 // Defaults
 $search = $_GET['search'] ?? '';

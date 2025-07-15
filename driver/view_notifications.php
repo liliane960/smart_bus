@@ -1,5 +1,5 @@
 <?php 
-require_once '../db.php';
+require_once 'db.php';
 
 session_start();
 
@@ -11,34 +11,27 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'driver') {
 
 $message = '';
 
-// Handle update existing comment
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['notification_id'], $_POST['comment'])) {
-        $notifId = trim($_POST['notification_id']);
-        $comment = trim($_POST['comment']);
-
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $update = $conn->prepare("UPDATE notifications SET comment = :comment WHERE notification_id = :id");
-            $update->execute([':comment' => $comment, ':id' => $notifId]);
-            $message = 'Comment updated successfully.';
-        }
+// Handle add comment
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notification_id'], $_POST['comment'])) {
+    $notifId = filter_var(trim($_POST['notification_id']), FILTER_VALIDATE_INT);
+    $comment = trim($_POST['comment']);
+    if ($notifId && $comment !== '') {
+        $stmt = $conn->prepare("INSERT INTO comments (notification_id, comment) VALUES (?, ?)");
+        $stmt->execute([$notifId, $comment]);
+        $message = 'Comment added successfully.';
     }
 }
 
 // Initialize search variable
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// Build base SQL to get overloading notifications with comments
-$sql = "SELECT n.notification_id, n.bus_id, n.bus_log_id, b.plate_number, n.message, n.sent_at, n.status, n.comment,
-               bl.passenger_count, bl.event, bl.created_at as log_time
+// Build dynamic WHERE clause
+$sql = "SELECT n.notification_id, n.bus_id, n.bus_log_id, b.plate_number, n.message, n.sent_at, n.status, bl.passenger_count, bl.event, bl.created_at as log_time
         FROM notifications n
         JOIN buses b ON n.bus_id = b.bus_id
         LEFT JOIN bus_logs bl ON n.bus_log_id = bl.id
         WHERE n.message LIKE '%overloading%'";
 
-// If search entered, add condition
 $params = [];
 if ($search !== '') {
     $sql .= " AND b.plate_number LIKE :search";
@@ -68,17 +61,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         border-radius: 4px; 
         border: 1px solid #dee2e6;
         font-size: 0.9em;
-    }
-    .comment-edit-form {
-        display: none;
-        margin-top: 10px;
-    }
-    .comment-edit-form.show {
-        display: block;
-    }
-    .btn-edit-comment {
-        font-size: 0.8em;
-        padding: 2px 8px;
+        margin-bottom: 4px;
     }
 </style>
 </head>
@@ -113,11 +96,11 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <th>Plate Number</th>
                     <th>Message</th>
                     <th>Status</th>
-                    <th>Comment</th>
+                    <th>Comments</th>
                     <th>Passengers</th>
                     <th>Event</th>
                     <th>Time</th>
-                    <th>Actions</th>
+                    <th>Add Comment</th>
                 </tr>
             </thead>
             <tbody>
@@ -128,47 +111,28 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($note['message']) ?></td>
                             <td><span class="badge bg-warning"><?= htmlspecialchars($note['status']) ?></span></td>
                             <td>
-                                <?php if (!empty($note['comment'])): ?>
-                                    <div class="comment-display">
-                                        <?= htmlspecialchars($note['comment']) ?>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-comment mt-1" 
-                                            onclick="toggleEditForm(<?= $note['notification_id'] ?>)">
-                                        Edit Comment
-                                    </button>
-                                    <form method="post" class="comment-edit-form" id="edit-form-<?= $note['notification_id'] ?>">
-                                        <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                        <div class="input-group input-group-sm">
-                                            <textarea name="comment" class="form-control" rows="3" required><?= htmlspecialchars($note['comment']) ?></textarea>
-                                            <button type="submit" class="btn btn-success">Save</button>
-                                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm(<?= $note['notification_id'] ?>)">Cancel</button>
-                                        </div>
-                                    </form>
-                                <?php else: ?>
-                                    <em class="text-muted">No comment</em>
-                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-comment mt-1" 
-                                            onclick="toggleEditForm(<?= $note['notification_id'] ?>)">
-                                        Add Comment
-                                    </button>
-                                    <form method="post" class="comment-edit-form" id="edit-form-<?= $note['notification_id'] ?>">
-                                        <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                        <div class="input-group input-group-sm">
-                                            <textarea name="comment" class="form-control" rows="3" placeholder="Enter comment..." required></textarea>
-                                            <button type="submit" class="btn btn-success">Save</button>
-                                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm(<?= $note['notification_id'] ?>)">Cancel</button>
-                                        </div>
-                                    </form>
-                                <?php endif; ?>
+                                <?php 
+                                $stmtC = $conn->prepare("SELECT * FROM comments WHERE notification_id = ? ORDER BY created_at ASC");
+                                $stmtC->execute([$note['notification_id']]);
+                                $comments = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+                                if ($comments) {
+                                    foreach ($comments as $c) {
+                                        echo '<div class="comment-display">'.htmlspecialchars($c['comment']).'<br><small>'.htmlspecialchars($c['created_at']).'</small></div>';
+                                    }
+                                } else {
+                                    echo '<span class="text-muted">No comments</span>';
+                                }
+                                ?>
                             </td>
                             <td><?= htmlspecialchars($note['passenger_count'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($note['event'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($note['log_time'] ?? $note['sent_at']) ?></td>
                             <td>
-                                <?php if (!empty($note['comment'])): ?>
-                                    <span class="badge bg-success">Comment exists</span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary">No comment</span>
-                                <?php endif; ?>
+                                <form method="post" style="display:flex;gap:5px;align-items:center;">
+                                    <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>">
+                                    <input type="text" name="comment" placeholder="Add comment..." required style="flex:1;padding:4px 8px;">
+                                    <button type="submit" class="btn btn-link" style="color:#007bff;text-decoration:underline;padding:4px 10px;background:none;border:none;cursor:pointer;">Add</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -183,12 +147,5 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </div>
-
-<script>
-function toggleEditForm(notificationId) {
-    const form = document.getElementById('edit-form-' + notificationId);
-    form.classList.toggle('show');
-}
-</script>
 </body>
 </html>

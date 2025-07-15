@@ -1,5 +1,5 @@
 <?php
-require_once '../database/db.php';
+require 'db.php';
 
 // Fetch data
 $stmt = $conn->query("SELECT * FROM notifications ORDER BY notification_id DESC");
@@ -23,7 +23,9 @@ $notifications = $stmt->fetchAll();
                 <th>Bus Log ID</th>
                 <th>Message</th>
                 <th>Sent At</th>
+                <th>Status</th>
                 <th>Comment</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -33,13 +35,17 @@ $notifications = $stmt->fetchAll();
                 <td><?= htmlspecialchars($row['bus_id']) ?></td>
                 <td><?= htmlspecialchars($row['bus_log_id']) ?></td>
                 <td><?= htmlspecialchars($row['message']) ?></td>
-                <td><?= $row['sent_at'] ? date('M d, Y H:i:s', strtotime($row['sent_at'])) : 'N/A' ?></td>
+                <td><?= htmlspecialchars($row['sent_at']) ?></td>
+                <td><?= htmlspecialchars($row['status']) ?></td>
                 <td>
                     <form method="post" action="update_comment.php" class="d-flex">
                         <input type="hidden" name="notification_id" value="<?= $row['notification_id'] ?>">
                         <input type="text" name="comment" value="<?= htmlspecialchars($row['comment']) ?>" class="form-control form-control-sm me-2">
                         <button type="submit" class="btn btn-primary btn-sm">Update</button>
                     </form>
+                </td>
+                <td>
+                    <!-- Optionally, you could add Delete/Edit buttons here in the future -->
                 </td>
             </tr>
             <?php endforeach; ?>

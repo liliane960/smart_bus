@@ -1,11 +1,11 @@
 <?php
-require_once '../db.php';
+require_once '../database/db.php';
 
 // Defaults
 $search = $_GET['search'] ?? '';
 $filter = $_GET['filter'] ?? ''; // e.g., normal, full, overloading
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$logsPerPage = 12345;
+$logsPerPage = 10;
 $offset = ($page - 1) * $logsPerPage;
 
 // Build dynamic WHERE clause
@@ -52,13 +52,46 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>Bus Logs</title>
 <link rel="stylesheet" href="../assets/style.css" />
 <style>
-    table { border-collapse: collapse; width: 100%; }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 700px; background: #fff; }
     th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
     .status-normal { color: green; font-weight: bold; }
     .status-full { color: orange; font-weight: bold; }
     .status-overloading { color: red; font-weight: bold; }
     .filters, .pagination, .search { margin: 10px 0; }
-    .pagination a { margin: 0 5px; text-decoration: none; }
+    .pagination { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+    .pagination a, .pagination span {
+        padding: 6px 12px;
+        background: #f1f1f1;
+        color: #007bff;
+        border-radius: 4px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        transition: background 0.2s, color 0.2s;
+        margin: 0 2px;
+    }
+    .pagination a:hover, .pagination a.active, .pagination a[style*='font-weight:bold'] {
+        background: #007bff;
+        color: #fff;
+        font-weight: bold;
+        border-color: #007bff;
+    }
+    .pagination .disabled {
+        pointer-events: none;
+        color: #aaa;
+        background: #eee;
+        border-color: #eee;
+    }
+    @media (max-width: 800px) {
+        .table-responsive { min-width: 0; }
+        table { min-width: 500px; }
+        th, td { font-size: 14px; padding: 6px 6px; }
+    }
+    @media (max-width: 600px) {
+        .table-responsive { min-width: 0; }
+        table { min-width: 350px; }
+        th, td { font-size: 12px; padding: 4px 2px; }
+    }
 </style>
 </head>
 <body>
@@ -84,6 +117,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <a href="?filter=overloading<?= $search ? '&search=' . urlencode($search) : '' ?>">Overloading</a>
 </div>
 
+<div class="table-responsive">
 <table>
 <thead>
     <tr>
@@ -118,18 +152,49 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php endif; ?>
 </tbody>
 </table>
+</div>
 
 <!-- Pagination -->
 <div class="pagination">
     <?php if ($totalPages > 1): ?>
-        <?php for ($p=1; $p<=$totalPages; $p++): ?>
-            <a href="?page=<?= $p ?>
-                <?= $filter ? '&filter=' . urlencode($filter) : '' ?>
-                <?= $search ? '&search=' . urlencode($search) : '' ?>"
-                <?= $p==$page ? 'style="font-weight:bold;"' : '' ?>>
-                <?= $p ?>
-            </a>
-        <?php endfor; ?>
+        <?php
+        $queryBase = '?';
+        if ($filter) $queryBase .= 'filter=' . urlencode($filter) . '&';
+        if ($search) $queryBase .= 'search=' . urlencode($search) . '&';
+        $window = 3; // Number of page numbers to show around current page
+        $start = max(1, $page - 1);
+        $end = min($totalPages, $page + 1);
+        ?>
+        <!-- Previous link -->
+        <?php if ($page > 1): ?>
+            <a href="<?= $queryBase . 'page=' . ($page-1) ?>">Previous</a>
+        <?php else: ?>
+            <span class="disabled">Previous</span>
+        <?php endif; ?>
+        <!-- Always show first page -->
+        <a href="<?= $queryBase . 'page=1' ?>" <?= $page==1 ? 'class="active"' : '' ?>>1</a>
+        <?php if ($start > 2): ?>
+            <span>...</span>
+        <?php endif; ?>
+        <?php
+        for ($p = $start; $p <= $end; $p++) {
+            if ($p != 1 && $p != $totalPages) {
+                echo '<a href="' . $queryBase . 'page=' . $p . '"' . ($p==$page ? ' class="active"' : '') . '>' . $p . '</a>';
+            }
+        }
+        ?>
+        <?php if ($end < $totalPages - 1): ?>
+            <span>...</span>
+        <?php endif; ?>
+        <?php if ($totalPages > 1): ?>
+            <a href="<?= $queryBase . 'page=' . $totalPages ?>" <?= $page==$totalPages ? 'class="active"' : '' ?>><?= $totalPages ?></a>
+        <?php endif; ?>
+        <!-- Next link -->
+        <?php if ($page < $totalPages): ?>
+            <a href="<?= $queryBase . 'page=' . ($page+1) ?>">Next</a>
+        <?php else: ?>
+            <span class="disabled">Next</span>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 </body>

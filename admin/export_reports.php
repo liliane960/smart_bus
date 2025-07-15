@@ -4,7 +4,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
-require_once "../db.php";
+require_once "../database/db.php";
 
 // Get export parameters
 $type = $_GET['type'] ?? 'summary';

@@ -1,5 +1,5 @@
 <?php
-require_once '../db.php';
+require_once '../database/db.php';
 
 session_start();
 
@@ -70,6 +70,27 @@ $recent_sql = "SELECT bl.id, b.plate_number, bl.passenger_count, bl.event, bl.cr
 
 $recent_stmt = $conn->query($recent_sql);
 $recent_events = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_notification_id'], $_POST['edit_comment'])) {
+    $notifId = filter_var(trim($_POST['edit_notification_id']), FILTER_VALIDATE_INT);
+    $comment = trim($_POST['edit_comment']);
+    if ($notifId !== false) {
+        $stmt = $conn->prepare("UPDATE notifications SET comment = ? WHERE notification_id = ?");
+        $stmt->execute([$comment, $notifId]);
+        $message = 'Main comment updated successfully.';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_comment_notification_id'], $_POST['add_comment_text'])) {
+    $notifId = filter_var(trim($_POST['add_comment_notification_id']), FILTER_VALIDATE_INT);
+    $comment = trim($_POST['add_comment_text']);
+    $userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+    if ($notifId !== false && $comment !== '') {
+        $stmt = $conn->prepare("INSERT INTO comments (notification_id, user_id, comment) VALUES (?, ?, ?)");
+        $stmt->execute([$notifId, $userId, $comment]);
+        $message = 'Comment added successfully.';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,13 +256,25 @@ $recent_events = $recent_stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?php if (!empty($note['comment'])): ?>
-                                                <div class="comment-display">
-                                                    <?= htmlspecialchars($note['comment']) ?>
-                                                </div>
-                                            <?php else: ?>
-                                                <span class="no-comment">No comment</span>
-                                            <?php endif; ?>
+                                            <form method="post" style="display:flex;gap:5px;align-items:center;">
+                                                <input type="hidden" name="edit_notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>">
+                                                <input type="text" name="edit_comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" placeholder="Write main comment..." required style="flex:1;padding:4px 8px;">
+                                                <button type="submit" class="btn btn-link" style="color:#007bff;text-decoration:underline;padding:4px 10px;background:none;border:none;cursor:pointer;">Save</button>
+                                            </form>
+                                            <?php 
+                                            // Show all additional comments from the comments table
+                                            $stmtC = $conn->prepare("SELECT * FROM comments WHERE notification_id = ? ORDER BY created_at ASC");
+                                            $stmtC->execute([$note['notification_id']]);
+                                            $comments = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+                                            foreach ($comments as $c) {
+                                                echo '<div class="comment-display">'.htmlspecialchars($c['comment']).'<br><small>'.htmlspecialchars($c['created_at']).'</small></div>';
+                                            }
+                                            ?>
+                                            <form method="post" style="display:flex;gap:5px;align-items:center;margin-top:4px;">
+                                                <input type="hidden" name="add_comment_notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>">
+                                                <input type="text" name="add_comment_text" placeholder="Add new comment..." required style="flex:1;padding:4px 8px;">
+                                                <button type="submit" class="btn btn-link" style="color:#007bff;text-decoration:underline;padding:4px 10px;background:none;border:none;cursor:pointer;">Add</button>
+                                            </form>
                                         </td>
                                         <td>
                                             <span class="badge bg-danger"><?= htmlspecialchars($note['passenger_count'] ?? 'N/A') ?></span>

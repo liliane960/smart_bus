@@ -98,13 +98,18 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($note['message']) ?></td>
                             <td><span class="badge bg-warning"><?= htmlspecialchars($note['status']) ?></span></td>
                             <td>
-                                <?php if (!empty($note['comment'])): ?>
-                                    <div class="comment-display">
-                                        <?= htmlspecialchars($note['comment']) ?>
-                                    </div>
-                                <?php else: ?>
-                                    <span class="no-comment">No comment available</span>
-                                <?php endif; ?>
+                                <?php 
+                                $stmtC = $conn->prepare("SELECT * FROM comments WHERE notification_id = ? ORDER BY created_at ASC");
+                                $stmtC->execute([$note['notification_id']]);
+                                $comments = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+                                if ($comments) {
+                                    foreach ($comments as $c) {
+                                        echo '<div class="comment-display">'.htmlspecialchars($c['comment']).'<br><small>'.htmlspecialchars($c['created_at']).'</small></div>';
+                                    }
+                                } else {
+                                    echo '<span class="no-comment">No comment available</span>';
+                                }
+                                ?>
                             </td>
                             <td><?= htmlspecialchars($note['passenger_count'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($note['event'] ?? 'N/A') ?></td>

@@ -8,7 +8,7 @@ error_reporting(E_ALL);
 session_start();
 
 // Adjust path if needed - make sure db.php sets $conn as PDO
-require_once '../db.php';
+require_once '../databasedb.php';
 
 // Check if user is logged in and is driver
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'driver') {
@@ -22,43 +22,13 @@ $canComment = in_array($userRole, ['admin', 'driver']);
 $message = '';
 
 // Handle POST form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canComment) {
-    if (isset($_POST['notification_id'], $_POST['comment'])) {
-        // Update existing comment
-        $notifId = trim($_POST['notification_id']);
-        $comment = trim($_POST['comment']);
-
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $update = $conn->prepare("UPDATE notifications SET comment = :comment WHERE notification_id = :id");
-            $update->execute([':comment' => $comment, ':id' => $notifId]);
-            $message = 'Comment updated successfully.';
-        }
-    } elseif (isset($_POST['bus_id'], $_POST['bus_log_id'], $_POST['new_comment'])) {
-        // Insert new notification with bus_log_id
-        $busId = trim($_POST['bus_id']);
-        $busLogId = trim($_POST['bus_log_id']);
-        $comment = trim($_POST['new_comment']);
-
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $messageText = "Overloading detected";
-            $status = 'pending';
-
-            $insert = $conn->prepare("INSERT INTO notifications 
-                (bus_id, bus_log_id, message, status, comment) 
-                VALUES (:bus_id, :bus_log_id, :message, :status, :comment)");
-            $insert->execute([
-                ':bus_id' => $busId,
-                ':bus_log_id' => $busLogId,
-                ':message' => $messageText,
-                ':status' => $status,
-                ':comment' => $comment
-            ]);
-            $message = 'Notification added successfully.';
-        }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notification_id'], $_POST['comment'])) {
+    $notifId = filter_var(trim($_POST['notification_id']), FILTER_VALIDATE_INT);
+    $comment = trim($_POST['comment']);
+    if ($notifId && $comment !== '') {
+        $stmt = $conn->prepare("INSERT INTO comments (notification_id, comment) VALUES (?, ?)");
+        $stmt->execute([$notifId, $comment]);
+        $message = 'Comment added successfully.';
     }
 }
 
@@ -107,7 +77,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Overloading Notifications - Driver</title>
+<title>Overload Notifications - Driver</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <style>
     body { padding: 20px; }
@@ -116,7 +86,7 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 <div class="container">
-    <h2 class="mb-4">Overloading Notifications - Driver</h2>
+    <h2 class="mb-4">Overload Notifications - Driver</h2>
 
     <?php if ($message): ?>
         <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
@@ -158,10 +128,22 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($note['message']) ?></td>
                             <td><?= htmlspecialchars($note['status']) ?></td>
                             <td>
+                                <?php 
+                                $stmtC = $conn->prepare("SELECT * FROM comments WHERE notification_id = ? ORDER BY created_at ASC");
+                                $stmtC->execute([$note['notification_id']]);
+                                $comments = $stmtC->fetchAll(PDO::FETCH_ASSOC);
+                                if ($comments) {
+                                    foreach ($comments as $c) {
+                                        echo '<div class="comment-display">'.htmlspecialchars($c['comment']).'<br><small>'.htmlspecialchars($c['created_at']).'</small></div>';
+                                    }
+                                } else {
+                                    echo '<span class="text-muted">No comments</span>';
+                                }
+                                ?>
                                 <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
                                     <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                    <input type="text" name="comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-success">Save</button>
+                                    <input type="text" name="comment" placeholder="Add new comment..." class="form-control form-control-sm" required />
+                                    <button type="submit" class="btn btn-sm btn-primary">Add</button>
                                 </form>
                             </td>
                             <td><?= htmlspecialchars($note['sent_at']) ?></td>

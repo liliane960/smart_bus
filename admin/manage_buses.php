@@ -4,7 +4,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../login.php");
     exit;
 }
-require_once "../db.php";
+require_once "../database/db.php";
 
 $message = '';
 
@@ -73,268 +73,87 @@ $buses = $conn->query("
 // Fetch drivers for dropdown
 $drivers = $conn->query("SELECT driver_id, name FROM drivers ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Manage Buses - Admin</title>
-<link rel="stylesheet" href="../assets/style.css">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-<style>
-/* Table styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-top: 20px;
-}
-table th, table td {
-    padding: 12px 15px;
-    text-align: center;
-    font-size: 14px;
-}
-table thead {
-    background-color: #007bff;
-    color: white;
-}
-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-table tr:hover {
-    background-color: #f1f1f1;
-}
-
-/* Form styling */
-.form-section {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin: 20px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.form-section h2 {
-    color: #007bff;
-    margin-bottom: 15px;
-}
-.form-group {
-    margin-bottom: 15px;
-}
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-.form-group input[type="text"],
-.form-group input[type="number"],
-.form-group select {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-/* Buttons */
-.btn {
-    display: inline-block;
-    padding: 6px 12px;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    border-radius: 4px;
-    transition: background 0.3s ease;
-}
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-.btn-primary:hover {
-    background-color: #0056b3;
-}
-.btn-warning {
-    background-color: #ffc107;
-    color: #212529;
-}
-.btn-warning:hover {
-    background-color: #e0a800;
-}
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-/* Table section title */
-.table-section h2 {
-    color: #007bff;
-    margin-top: 30px;
-    margin-bottom: 10px;
-}
-
-/* Modal styling */
-#editModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-}
-#editModal > div {
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    width: 400px;
-    max-width: 90%;
-    margin: 100px auto;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-#editModal h3 {
-    color: #007bff;
-    margin-bottom: 15px;
-}
-
-/* Action buttons in table */
-.actions button {
-    margin-right: 5px;
-}
-</style>
-</head>
-<body>
-
-<div class="form-section">
-    <h2><i class="fas fa-plus"></i> Add New Bus</h2>
-    <form method="POST">
-        <div class="form-group">
-            <label for="plate">Plate Number:</label>
-            <input type="text" id="plate" name="plate" required placeholder="e.g., RAC123B">
-        </div>
-        <div class="form-group">
-            <label for="capacity">Capacity:</label>
-            <input type="number" id="capacity" name="capacity" required min="1" max="100" placeholder="e.g., 20">
-        </div>
-        <div class="form-group">
-            <label for="driver_id">Assigned Driver (Optional):</label>
-            <select id="driver_id" name="driver_id">
-                <option value="">No Driver Assigned</option>
-                <?php foreach ($drivers as $driver): ?>
-                    <option value="<?= $driver['driver_id'] ?>"><?= htmlspecialchars($driver['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <button type="submit" name="add" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Bus
-        </button>
-    </form>
-</div>
-
-<div class="table-section">
-    <h2><i class="fas fa-list"></i> All Buses</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Plate Number</th>
-                <th>Capacity</th>
-                <th>Assigned Driver</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if ($buses): ?>
-                <?php foreach ($buses as $bus): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($bus['bus_id']) ?></td>
-                        <td><strong><?= htmlspecialchars($bus['plate_number']) ?></strong></td>
-                        <td><?= htmlspecialchars($bus['capacity']) ?> passengers</td>
-                        <td>
-                            <?php if ($bus['driver_name']): ?>
-                                <span style="color: #28a745;"><?= htmlspecialchars($bus['driver_name']) ?></span>
-                            <?php else: ?>
-                                <span style="color: #6c757d; font-style: italic;">No driver assigned</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="actions">
-                            <button onclick="editBus(<?= $bus['bus_id'] ?>, '<?= htmlspecialchars($bus['plate_number']) ?>', <?= $bus['capacity'] ?>, <?= $bus['driver_id'] ?: 'null' ?>)" 
-                                    class="btn btn-warning">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this bus?')">
-                                <input type="hidden" name="bus_id" value="<?= $bus['bus_id'] ?>">
-                                <button type="submit" name="delete" class="btn btn-danger">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="5" style="text-align: center; color: #6c757d; padding: 20px;">
-                        <i class="fas fa-bus fa-2x mb-2"></i><br>
-                        No buses found. Add your first bus above.
-                    </td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
-
-<!-- Edit Modal -->
-<div id="editModal">
-    <div>
-        <h3><i class="fas fa-edit"></i> Edit Bus</h3>
-        <form method="POST" id="editForm">
-            <input type="hidden" name="bus_id" id="edit_bus_id">
-            <div class="form-group">
-                <label for="edit_plate">Plate Number:</label>
-                <input type="text" id="edit_plate" name="plate" required>
+<!-- Modern Manage Buses UI using project styles -->
+<div class="main-content-section">
+    <div class="header-row" style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+        <span style="font-size:2rem;color:#007bff;"><i class="fas fa-bus"></i></span>
+        <h2 style="margin:0;color:#222;font-weight:700;">Manage Buses</h2>
+    </div>
+    <?php if ($message): ?>
+        <div class="alert alert-info" style="margin-bottom:20px;"> <?= htmlspecialchars($message) ?> </div>
+    <?php endif; ?>
+    <div class="card" style="background:#fff;border-radius:10px;padding:24px 20px;margin-bottom:32px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <form method="POST" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+            <div style="flex:1;min-width:180px;">
+                <label for="plate" style="font-weight:600;">Plate Number</label>
+                <input type="text" id="plate" name="plate" class="form-control" required placeholder="e.g., RAC123B" style="width:100%;padding:8px 10px;margin-top:4px;">
             </div>
-            <div class="form-group">
-                <label for="edit_capacity">Capacity:</label>
-                <input type="number" id="edit_capacity" name="capacity" required min="1" max="100">
+            <div style="flex:1;min-width:120px;">
+                <label for="capacity" style="font-weight:600;">Capacity</label>
+                <input type="number" id="capacity" name="capacity" class="form-control" required min="1" max="100" placeholder="e.g., 20" style="width:100%;padding:8px 10px;margin-top:4px;">
             </div>
-            <div class="form-group">
-                <label for="edit_driver_id">Assigned Driver:</label>
-                <select id="edit_driver_id" name="driver_id">
+            <div style="flex:1;min-width:180px;">
+                <label for="driver_id" style="font-weight:600;">Assigned Driver (Optional)</label>
+                <select id="driver_id" name="driver_id" class="form-control" style="width:100%;padding:8px 10px;margin-top:4px;">
                     <option value="">No Driver Assigned</option>
                     <?php foreach ($drivers as $driver): ?>
                         <option value="<?= $driver['driver_id'] ?>"><?= htmlspecialchars($driver['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div style="text-align: right; margin-top: 20px;">
-                <button type="button" onclick="closeEditModal()" class="btn btn-danger">Cancel</button>
-                <button type="submit" name="edit" class="btn btn-primary">Update Bus</button>
+            <div style="min-width:120px;">
+                <button type="submit" name="add" class="btn btn-primary" style="width:100%;padding:10px 0;font-weight:600;">
+                    <i class="fas fa-plus"></i> Add Bus
+                </button>
             </div>
         </form>
     </div>
+    <div class="card" style="background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <h3 style="margin-top:0;margin-bottom:18px;color:#007bff;font-weight:600;"><i class="fas fa-list"></i> All Buses</h3>
+        <div class="table-responsive">
+            <table class="table" style="width:100%;border-collapse:collapse;">
+                <thead style="background:#007bff;color:#fff;">
+                    <tr>
+                        <th>bus_id</th>
+                        <th>plate_number</th>
+                        <th>capacity</th>
+                        <th>status</th>
+                        <th>driver_id</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (count($buses) > 0): ?>
+                    <?php foreach ($buses as $bus): ?>
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td><?= htmlspecialchars($bus['bus_id']) ?></td>
+                            <td style="font-weight:600;"><?= htmlspecialchars($bus['plate_number']) ?></td>
+                            <td><?= htmlspecialchars($bus['capacity']) ?></td>
+                            <td><?= htmlspecialchars($bus['status'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($bus['driver_id'] ?? '') ?></td>
+                            <td style="display:flex;gap:6px;">
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="bus_id" value="<?= $bus['bus_id'] ?>">
+                                    <button type="submit" name="delete" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Delete this bus?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-bus fa-2x mb-2"></i><br>
+                            No buses found. Add your first bus above.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
+<!-- Edit Modal Removed -->
 <script>
-function editBus(busId, plate, capacity, driverId) {
-    document.getElementById('edit_bus_id').value = busId;
-    document.getElementById('edit_plate').value = plate;
-    document.getElementById('edit_capacity').value = capacity;
-    document.getElementById('edit_driver_id').value = driverId || '';
-    document.getElementById('editModal').style.display = 'block';
-}
-function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
-}
-// Close modal when clicking outside
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeEditModal();
-    }
-});
 </script>
-</body>
-</html>
