@@ -216,17 +216,8 @@ require_once "../db.php";
             <li><a href="#" data-page="view_notifications.php">
                 <i class="fas fa-bell"></i> View Notifications
             </a></li>
-            <li><a href="#" data-page="view_plate_number.php">
-                <i class="fas fa-id-card"></i> Plate Numbers
-            </a></li>
-            <li><a href="#" data-page="system_reports.php">
+            <li><a href="#" data-page="export_reports.php">
                 <i class="fas fa-chart-bar"></i> Reports
-            </a></li>
-            <li><a href="#" data-page="system_settings.php">
-                <i class="fas fa-cogs"></i> Settings
-            </a></li>
-            <li><a href="#" data-page="backup_restore.php">
-                <i class="fas fa-database"></i> Backup/Restore
             </a></li>
         </ul>
     </aside>
@@ -294,28 +285,6 @@ require_once "../db.php";
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-            <div class="action-card">
-                <i class="fas fa-user-plus"></i>
-                <h3>Add New User</h3>
-                <p>Create new admin, driver, or police accounts</p>
-                <a href="#" class="action-btn" onclick="loadPage('manage_users.php')">Add User</a>
-            </div>
-            <div class="action-card">
-                <i class="fas fa-bus"></i>
-                <h3>Add New Bus</h3>
-                <p>Register a new bus with plate number and capacity</p>
-                <a href="#" class="action-btn" onclick="loadPage('manage_buses.php')">Add Bus</a>
-            </div>
-            <div class="action-card">
-                <i class="fas fa-user-tie"></i>
-                <h3>Add New Driver</h3>
-                <p>Register a new driver with contact information</p>
-                <a href="#" class="action-btn" onclick="loadPage('manage_drivers.php')">Add Driver</a>
-            </div>
-        </div>
-
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
             <!-- Recent Activity -->
             <div class="recent-activity">
@@ -361,30 +330,7 @@ require_once "../db.php";
             <!-- System Status -->
             <div class="system-status">
                 <h3><i class="fas fa-server"></i> System Status</h3>
-                <div class="status-item">
-                    <span>Database Connection</span>
-                    <div class="status-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <span>Notification System</span>
-                    <div class="status-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <span>Log Recording</span>
-                    <div class="status-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <span>User Authentication</span>
-                    <div class="status-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <span>Auto Notifications</span>
-                    <div class="status-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <span>Data Export</span>
-                    <div class="status-indicator"></div>
-                </div>
+    
             </div>
         </div>
         

@@ -102,28 +102,13 @@ $overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <title>Overloading Notifications - Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <style>
-    body { padding: 20px; }
-    .table-responsive { max-height: 600px; overflow-y: auto; }
-    .comment-display { 
-        max-width: 300px; 
-        word-wrap: break-word; 
-        background-color: #f8f9fa; 
-        padding: 8px; 
-        border-radius: 4px; 
-        border: 1px solid #dee2e6;
-        font-size: 0.9em;
-    }
-    .comment-edit-form {
-        display: none;
-        margin-top: 10px;
-    }
-    .comment-edit-form.show {
-        display: block;
-    }
-    .btn-edit-comment {
-        font-size: 0.8em;
-        padding: 2px 8px;
-    }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
+    .status-normal { color: green; font-weight: bold; }
+    .status-full { color: orange; font-weight: bold; }
+    .status-overloading { color: red; font-weight: bold; }
+    .filters, .pagination, .search { margin: 10px 0; }
+    .pagination a { margin: 0 5px; text-decoration: none; }
 </style>
 </head>
 <body>

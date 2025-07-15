@@ -89,31 +89,13 @@ $unassigned_drivers = $total_drivers - $assigned_drivers;
 <link rel="stylesheet" href="../assets/style.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 <style>
-    body { padding: 20px; background-color: #f8f9fa; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .form-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .table-section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background-color: #f8f9fa; font-weight: bold; }
-    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin: 2px; }
-    .btn-primary { background: #007bff; color: white; }
-    .btn-danger { background: #dc3545; color: white; }
-    .btn-warning { background: #ffc107; color: #000; }
-    .btn:hover { opacity: 0.8; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .alert { padding: 15px; border-radius: 4px; margin-bottom: 20px; }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .actions { display: flex; gap: 5px; flex-wrap: wrap; }
-    .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-    .stat-card { background: white; padding: 20px; border-radius: 10px; flex: 1; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .stat-card h3 { margin: 0; color: #007bff; font-size: 2rem; }
-    .assigned { color: #28a745; font-weight: bold; }
-    .unassigned { color: #6c757d; font-style: italic; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
+    .status-normal { color: green; font-weight: bold; }
+    .status-full { color: orange; font-weight: bold; }
+    .status-overloading { color: red; font-weight: bold; }
+    .filters, .pagination, .search { margin: 10px 0; }
+    .pagination a { margin: 0 5px; text-decoration: none; }
 </style>
 </head>
 <body>

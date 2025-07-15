@@ -80,35 +80,13 @@ $notification_stats = $stmt->fetch(PDO::FETCH_ASSOC);
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    body { padding: 20px; background-color: #f8f9fa; }
-    .container { max-width: 1400px; margin: 0 auto; }
-    .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .filter-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
-    .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .stat-card h3 { margin: 0; font-size: 2rem; color: #007bff; }
-    .stat-card p { margin: 5px 0 0 0; color: #666; }
-    .chart-section { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .table-section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background-color: #f8f9fa; font-weight: bold; }
-    .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin: 2px; }
-    .btn-primary { background: #007bff; color: white; }
-    .btn-success { background: #28a745; color: white; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .form-group input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .chart-container { position: relative; height: 400px; margin: 20px 0; }
-    .performance-indicator { 
-        padding: 4px 8px; 
-        border-radius: 4px; 
-        font-size: 0.8em; 
-        font-weight: bold; 
-    }
-    .performance-good { background: #d4edda; color: #155724; }
-    .performance-warning { background: #fff3cd; color: #856404; }
-    .performance-danger { background: #f8d7da; color: #721c24; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
+    .status-normal { color: green; font-weight: bold; }
+    .status-full { color: orange; font-weight: bold; }
+    .status-overloading { color: red; font-weight: bold; }
+    .filters, .pagination, .search { margin: 10px 0; }
+    .pagination a { margin: 0 5px; text-decoration: none; }
 </style>
 </head>
 <body>
