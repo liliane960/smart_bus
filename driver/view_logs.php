@@ -5,7 +5,7 @@ require_once '../db.php';
 $search = $_GET['search'] ?? '';
 $filter = $_GET['filter'] ?? ''; // e.g., normal, full, overloading
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$logsPerPage = 10;
+$logsPerPage = 12345;
 $offset = ($page - 1) * $logsPerPage;
 
 // Build dynamic WHERE clause

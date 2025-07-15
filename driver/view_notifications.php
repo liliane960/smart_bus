@@ -24,42 +24,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update->execute([':comment' => $comment, ':id' => $notifId]);
             $message = 'Comment updated successfully.';
         }
-    } elseif (isset($_POST['bus_id'], $_POST['new_comment'])) {
-        // Insert new notification
-        $busId = trim($_POST['bus_id']);
-        $comment = trim($_POST['new_comment']);
-        
-        if ($comment === '') {
-            $message = 'Comment cannot be empty.';
-        } else {
-            $messageText = "Overloading detected";
-            $status = 'pending';
-
-            $insert = $conn->prepare("INSERT INTO notifications 
-                (bus_id, message, status, comment) 
-                VALUES (:bus_id, :message, :status, :comment)");
-            $insert->execute([
-                ':bus_id' => $busId,
-                ':message' => $messageText,
-                ':status' => $status,
-                ':comment' => $comment
-            ]);
-            $message = 'Notification added successfully.';
-        }
     }
 }
 
-// get search input
+// Initialize search variable
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-// build SQL to get notifications with comments
-$sql = "SELECT n.notification_id, n.bus_id, b.plate_number, n.message, n.sent_at, n.status, n.comment,
+// Build base SQL to get overloading notifications with comments
+$sql = "SELECT n.notification_id, n.bus_id, n.bus_log_id, b.plate_number, n.message, n.sent_at, n.status, n.comment,
                bl.passenger_count, bl.event, bl.created_at as log_time
         FROM notifications n
         JOIN buses b ON n.bus_id = b.bus_id
-        LEFT JOIN bus_logs bl ON bl.bus_id = n.bus_id AND bl.status = 'overloading'
+        LEFT JOIN bus_logs bl ON n.bus_log_id = bl.id
         WHERE n.message LIKE '%overloading%'";
 
+// If search entered, add condition
 $params = [];
 if ($search !== '') {
     $sql .= " AND b.plate_number LIKE :search";
@@ -71,117 +50,145 @@ $sql .= " ORDER BY n.sent_at DESC";
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Also get buses with overloading status that don't have notifications yet
-$sql2 = "SELECT DISTINCT bl.bus_id, b.plate_number, bl.passenger_count, bl.event, bl.created_at, bl.status
-         FROM bus_logs bl
-         JOIN buses b ON bl.bus_id = b.bus_id
-         WHERE bl.status = 'overloading'
-         AND bl.bus_id NOT IN (SELECT DISTINCT bus_id FROM notifications WHERE message LIKE '%overloading%')";
-
-$params2 = [];
-if ($search !== '') {
-    $sql2 .= " AND b.plate_number LIKE :search";
-    $params2[':search'] = "%$search%";
-}
-
-$sql2 .= " ORDER BY bl.created_at DESC";
-
-$stmt2 = $conn->prepare($sql2);
-$stmt2->execute($params2);
-$overloadingBuses = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>View Notifications - Driver</title>
+<title>Overloading Notifications - Driver</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <style>
     body { padding: 20px; }
-    .table-responsive { max-height: 500px; overflow-y: auto; }
+    .table-responsive { max-height: 600px; overflow-y: auto; }
+    .comment-display { 
+        max-width: 300px; 
+        word-wrap: break-word; 
+        background-color: #f8f9fa; 
+        padding: 8px; 
+        border-radius: 4px; 
+        border: 1px solid #dee2e6;
+        font-size: 0.9em;
+    }
+    .comment-edit-form {
+        display: none;
+        margin-top: 10px;
+    }
+    .comment-edit-form.show {
+        display: block;
+    }
+    .btn-edit-comment {
+        font-size: 0.8em;
+        padding: 2px 8px;
+    }
 </style>
 </head>
 <body>
-<div class="container">
-    <h2 class="mb-4">View Notifications - Driver</h2>
+<div class="container-fluid">
+    <h2 class="mb-4">Overloading Notifications - Driver</h2>
 
     <?php if ($message): ?>
         <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
     <?php endif; ?>
 
-    <form method="get" class="row g-3 mb-3">
-        <div class="col-auto">
-            <input type="text" name="search" class="form-control" placeholder="Search by Plate Number" value="<?= htmlspecialchars($search) ?>" />
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary mb-3">Search</button>
+    <!-- Search Form -->
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" 
+                       placeholder="Search by plate number..." class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="view_notifications.php" class="btn btn-secondary">Clear</a>
+            </div>
         </div>
     </form>
 
+    <!-- Existing Notifications -->
+    <h3>Overloading Notifications</h3>
     <div class="table-responsive">
-        <table class="table table-striped table-bordered align-middle">
-            <thead class="table-light">
+        <table class="table table-striped">
+            <thead>
                 <tr>
                     <th>Plate Number</th>
                     <th>Message</th>
                     <th>Status</th>
                     <th>Comment</th>
+                    <th>Passengers</th>
+                    <th>Event</th>
                     <th>Time</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($notifications): ?>
                     <?php foreach ($notifications as $note): ?>
                         <tr>
-                            <td><?= htmlspecialchars($note['plate_number']) ?></td>
+                            <td><strong><?= htmlspecialchars($note['plate_number']) ?></strong></td>
                             <td><?= htmlspecialchars($note['message']) ?></td>
-                            <td><?= htmlspecialchars($note['status']) ?></td>
+                            <td><span class="badge bg-warning"><?= htmlspecialchars($note['status']) ?></span></td>
                             <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
-                                    <input type="text" name="comment" value="<?= htmlspecialchars($note['comment'] ?? '') ?>" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-success">Save</button>
-                                </form>
+                                <?php if (!empty($note['comment'])): ?>
+                                    <div class="comment-display">
+                                        <?= htmlspecialchars($note['comment']) ?>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-comment mt-1" 
+                                            onclick="toggleEditForm(<?= $note['notification_id'] ?>)">
+                                        Edit Comment
+                                    </button>
+                                    <form method="post" class="comment-edit-form" id="edit-form-<?= $note['notification_id'] ?>">
+                                        <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
+                                        <div class="input-group input-group-sm">
+                                            <textarea name="comment" class="form-control" rows="3" required><?= htmlspecialchars($note['comment']) ?></textarea>
+                                            <button type="submit" class="btn btn-success">Save</button>
+                                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm(<?= $note['notification_id'] ?>)">Cancel</button>
+                                        </div>
+                                    </form>
+                                <?php else: ?>
+                                    <em class="text-muted">No comment</em>
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-comment mt-1" 
+                                            onclick="toggleEditForm(<?= $note['notification_id'] ?>)">
+                                        Add Comment
+                                    </button>
+                                    <form method="post" class="comment-edit-form" id="edit-form-<?= $note['notification_id'] ?>">
+                                        <input type="hidden" name="notification_id" value="<?= htmlspecialchars($note['notification_id']) ?>" />
+                                        <div class="input-group input-group-sm">
+                                            <textarea name="comment" class="form-control" rows="3" placeholder="Enter comment..." required></textarea>
+                                            <button type="submit" class="btn btn-success">Save</button>
+                                            <button type="button" class="btn btn-secondary" onclick="toggleEditForm(<?= $note['notification_id'] ?>)">Cancel</button>
+                                        </div>
+                                    </form>
+                                <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars($note['sent_at']) ?></td>
+                            <td><?= htmlspecialchars($note['passenger_count'] ?? 'N/A') ?></td>
+                            <td><?= htmlspecialchars($note['event'] ?? 'N/A') ?></td>
+                            <td><?= htmlspecialchars($note['log_time'] ?? $note['sent_at']) ?></td>
                             <td>
-                                <small class="text-success">Comment exists</small>
+                                <?php if (!empty($note['comment'])): ?>
+                                    <span class="badge bg-success">Comment exists</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">No comment</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <?php if ($overloadingBuses): ?>
-                    <?php foreach ($overloadingBuses as $bus): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($bus['plate_number']) ?></td>
-                            <td><?= htmlspecialchars("Event: {$bus['event']}, Passengers: {$bus['passenger_count']}") ?></td>
-                            <td><?= htmlspecialchars($bus['status']) ?></td>
-                            <td>
-                                <form method="post" class="d-flex gap-2 align-items-center" style="margin:0;">
-                                    <input type="hidden" name="bus_id" value="<?= htmlspecialchars($bus['bus_id']) ?>" />
-                                    <input type="text" name="new_comment" placeholder="Add comment" class="form-control form-control-sm" required />
-                                    <button type="submit" class="btn btn-sm btn-primary">Add</button>
-                                </form>
-                            </td>
-                            <td><?= htmlspecialchars($bus['created_at']) ?></td>
-                            <td>
-                                <small class="text-muted">Add comment</small>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                
-                <?php if (!$notifications && !$overloadingBuses): ?>
-                    <tr><td colspan="6">No overloading notifications found.</td></tr>
+                <?php else: ?>
+                    <tr><td colspan="8" class="text-center">No notifications found.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
+
+    <div class="mt-4">
+        <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleEditForm(notificationId) {
+    const form = document.getElementById('edit-form-' + notificationId);
+    form.classList.toggle('show');
+}
+</script>
 </body>
 </html>
