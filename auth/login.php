@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit" class="btn btn-primary w-100">Login</button>
             </form>
             
-            <div class="mt-4">
+            <!-- <div class="mt-4">
                 <h6>Test Accounts:</h6>
                 <ul class="list-unstyled small">
                     <li><strong>Admin:</strong> admin / admin</li>
@@ -105,7 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <em>If login fails, run <a href="fix_all_passwords.php">fix_all_passwords.php</a> to reset passwords.</em>
                 </p>
             </div>
-        </div>
+        </div> -->
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

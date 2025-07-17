@@ -1,201 +1,265 @@
 <?php
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once '../database/db.php';
 
-// Defaults
-$search = $_GET['search'] ?? '';
-$filter = $_GET['filter'] ?? ''; // e.g., normal, full, overloading
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$logsPerPage = 10;
-$offset = ($page - 1) * $logsPerPage;
+// Check if user is logged in and is admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    echo '<div class="alert alert-danger">Access denied. Please log in as an admin.</div>';
+    exit();
+}
 
-// Build dynamic WHERE clause
-$where = "WHERE 1";
+// Filter settings
+$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+
+// Pagination settings
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$per_page = 50; // Limit to 50 records per page
+$offset = ($page - 1) * $per_page;
+
+// Build WHERE clause for filters
+$where_conditions = [];
 $params = [];
 
-if ($search) {
-    $where .= " AND b.plate_number LIKE ?";
-    $params[] = '%' . $search . '%';
+if (!empty($status_filter)) {
+    $where_conditions[] = "bl.status = ?";
+    $params[] = $status_filter;
 }
 
-if (in_array($filter, ['normal', 'full', 'overloading'])) {
-    $where .= " AND bl.status = ?";
-    $params[] = $filter;
+$where_clause = '';
+if (!empty($where_conditions)) {
+    $where_clause = "WHERE " . implode(" AND ", $where_conditions);
 }
 
-// Count total logs for pagination
-$countStmt = $conn->prepare("
-    SELECT COUNT(*) FROM bus_logs bl
-    JOIN buses b ON bl.bus_id = b.bus_id
-    $where
-");
-$countStmt->execute($params);
-$totalLogs = $countStmt->fetchColumn();
-$totalPages = ceil($totalLogs / $logsPerPage);
+// Build SQL to get hardware data from bus_logs (with pagination and filters)
+$sql = "SELECT bl.id, bl.bus_id, bl.event, bl.passenger_count, bl.status, bl.created_at,
+               b.plate_number, b.capacity
+        FROM bus_logs bl
+        JOIN buses b ON bl.bus_id = b.bus_id
+        $where_clause
+        ORDER BY bl.created_at DESC
+        LIMIT $per_page OFFSET $offset";
 
-// Get logs with limit & offset
-$sql = "
-    SELECT bl.id, b.plate_number, bl.event, bl.passenger_count, bl.status, bl.created_at
-    FROM bus_logs bl
-    JOIN buses b ON bl.bus_id = b.bus_id
-    $where
-    ORDER BY bl.created_at DESC
-    LIMIT $logsPerPage OFFSET $offset
-";
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
-$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$hardware_events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get total count for pagination
+$count_sql = "SELECT COUNT(*) as total FROM bus_logs bl
+              JOIN buses b ON bl.bus_id = b.bus_id
+              $where_clause";
+$count_stmt = $conn->prepare($count_sql);
+$count_stmt->execute($params);
+$total_count = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$total_pages = ceil($total_count / $per_page);
+
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Bus Logs</title>
-<link rel="stylesheet" href="../assets/style.css" />
+<meta charset="UTF-8">
+<title>Hardware Data Dashboard - Admin</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 <style>
-    .table-responsive { width: 100%; overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; min-width: 700px; background: #fff; }
-    th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
-    .status-normal { color: green; font-weight: bold; }
-    .status-full { color: orange; font-weight: bold; }
-    .status-overloading { color: red; font-weight: bold; }
-    .filters, .pagination, .search { margin: 10px 0; }
-    .pagination { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-    .pagination a, .pagination span {
-        padding: 6px 12px;
-        background: #f1f1f1;
-        color: #007bff;
-        border-radius: 4px;
-        text-decoration: none;
-        border: 1px solid #ddd;
-        transition: background 0.2s, color 0.2s;
-        margin: 0 2px;
+    body { padding: 20px; background-color: #f8f9fa; }
+    .table-responsive { max-height: 500px; overflow-y: auto; }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
     }
-    .pagination a:hover, .pagination a.active, .pagination a[style*='font-weight:bold'] {
-        background: #007bff;
-        color: #fff;
+    .stat-card h3 {
+        margin: 0;
+        font-size: 2.5rem;
         font-weight: bold;
-        border-color: #007bff;
     }
-    .pagination .disabled {
-        pointer-events: none;
-        color: #aaa;
-        background: #eee;
-        border-color: #eee;
+    .stat-card p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
     }
-    @media (max-width: 800px) {
-        .table-responsive { min-width: 0; }
-        table { min-width: 500px; }
-        th, td { font-size: 14px; padding: 6px 6px; }
+    .hardware-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    @media (max-width: 600px) {
-        .table-responsive { min-width: 0; }
-        table { min-width: 350px; }
-        th, td { font-size: 12px; padding: 4px 2px; }
+    .event-entry { color: #28a745; }
+    .event-exit { color: #dc3545; }
+    .status-normal { color: #28a745; }
+    .status-full { color: #ffc107; }
+    .status-overloading { color: #dc3545; }
+    .passenger-count {
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    .real-time-indicator {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
     }
 </style>
 </head>
 <body>
-<h1>Bus Logs</h1>
+<div class="container-fluid">
 
-<!-- Search form -->
-<form method="get" class="search">
-    <input type="text" name="search" placeholder="Search by plate number" value="<?= htmlspecialchars($search) ?>" />
-    <input type="submit" value="Search" />
-</form>
-<div class="export">
-    <a href="export_logs.php?<?= http_build_query(['search' => $search, 'filter' => $filter]) ?>" 
-       style="padding:6px 12px; background:#4CAF50; color:white; text-decoration:none; border-radius:4px;">
-       Export to Excel
-    </a>
-</div>
 
-<!-- Filter buttons -->
-<div class="filters">
-    <a href="?">All</a>
-    <a href="?filter=normal<?= $search ? '&search=' . urlencode($search) : '' ?>">Normal</a>
-    <a href="?filter=full<?= $search ? '&search=' . urlencode($search) : '' ?>">Full</a>
-    <a href="?filter=overloading<?= $search ? '&search=' . urlencode($search) : '' ?>">Overloading</a>
-</div>
+    <!-- Filter and Export Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="normal" <?= $status_filter == 'normal' ? 'selected' : '' ?>>Normal</option>
+                                <option value="full" <?= $status_filter == 'full' ? 'selected' : '' ?>>Full</option>
+                                <option value="overloading" <?= $status_filter == 'overloading' ? 'selected' : '' ?>>Overloading</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <a href="/bus-system/liliane%20ishimwe/smart-bus/admin/export_hardware_data.php?<?= http_build_query($_GET) ?>" class="btn btn-success" target="_blank">
+                                    <i class="fas fa-file-excel"></i> Export Excel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="table-responsive">
-<table>
-<thead>
-    <tr>
-        <th>ID</th>
-        <th>Plate Number</th>
-        <th>Event</th>
-        <th>Passenger Count</th>
-        <th>Status</th>
-        <th>Created At</th>
-    </tr>
-</thead>
-<tbody>
-<?php if ($logs): ?>
-    <?php foreach ($logs as $log): ?>
-        <?php
-            $statusClass = '';
-            if ($log['status'] == 'normal') $statusClass = 'status-normal';
-            elseif ($log['status'] == 'full') $statusClass = 'status-full';
-            elseif ($log['status'] == 'overloading') $statusClass = 'status-overloading';
-        ?>
-        <tr>
-            <td><?= htmlspecialchars($log['id']) ?></td>
-            <td><?= htmlspecialchars($log['plate_number']) ?></td>
-            <td><?= htmlspecialchars($log['event']) ?></td>
-            <td><?= htmlspecialchars($log['passenger_count']) ?></td>
-            <td class="<?= $statusClass ?>"><?= htmlspecialchars($log['status']) ?></td>
-            <td><?= htmlspecialchars($log['created_at']) ?></td>
-        </tr>
-    <?php endforeach; ?>
-<?php else: ?>
-    <tr><td colspan="6">No logs found.</td></tr>
-<?php endif; ?>
-</tbody>
-</table>
-</div>
 
-<!-- Pagination -->
-<div class="pagination">
-    <?php if ($totalPages > 1): ?>
-        <?php
-        $queryBase = '?';
-        if ($filter) $queryBase .= 'filter=' . urlencode($filter) . '&';
-        if ($search) $queryBase .= 'search=' . urlencode($search) . '&';
-        $window = 3; // Number of page numbers to show around current page
-        $start = max(1, $page - 1);
-        $end = min($totalPages, $page + 1);
-        ?>
-        <!-- Previous link -->
-        <?php if ($page > 1): ?>
-            <a href="<?= $queryBase . 'page=' . ($page-1) ?>">Previous</a>
-        <?php else: ?>
-            <span class="disabled">Previous</span>
-        <?php endif; ?>
-        <!-- Always show first page -->
-        <a href="<?= $queryBase . 'page=1' ?>" <?= $page==1 ? 'class="active"' : '' ?>>1</a>
-        <?php if ($start > 2): ?>
-            <span>...</span>
-        <?php endif; ?>
-        <?php
-        for ($p = $start; $p <= $end; $p++) {
-            if ($p != 1 && $p != $totalPages) {
-                echo '<a href="' . $queryBase . 'page=' . $p . '"' . ($p==$page ? ' class="active"' : '') . '>' . $p . '</a>';
-            }
-        }
-        ?>
-        <?php if ($end < $totalPages - 1): ?>
-            <span>...</span>
-        <?php endif; ?>
-        <?php if ($totalPages > 1): ?>
-            <a href="<?= $queryBase . 'page=' . $totalPages ?>" <?= $page==$totalPages ? 'class="active"' : '' ?>><?= $totalPages ?></a>
-        <?php endif; ?>
-        <!-- Next link -->
-        <?php if ($page < $totalPages): ?>
-            <a href="<?= $queryBase . 'page=' . ($page+1) ?>">Next</a>
-        <?php else: ?>
-            <span class="disabled">Next</span>
-        <?php endif; ?>
+
+
+
+    <!-- Hardware Events Table -->
+    <div class="hardware-table">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Plate Number</th>
+                        <th>Event</th>
+                        <th>Passengers</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($hardware_events): ?>
+                        <?php foreach ($hardware_events as $event): ?>
+                            <tr>
+                                <td><strong><?= htmlspecialchars($event['plate_number']) ?></strong></td>
+                                <td>
+                                    <?php if ($event['event'] == 'entry'): ?>
+                                        <span class="event-entry">
+                                            <i class="fas fa-sign-in-alt"></i> Entry
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="event-exit">
+                                            <i class="fas fa-sign-out-alt"></i> Exit
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary fs-6"><?= htmlspecialchars($event['passenger_count']) ?></span>
+                                </td>
+                                <td>
+                                    <?php if ($event['status'] == 'normal'): ?>
+                                        <span class="badge bg-success">Normal</span>
+                                    <?php elseif ($event['status'] == 'full'): ?>
+                                        <span class="badge bg-warning">Full</span>
+                                    <?php elseif ($event['status'] == 'overloading'): ?>
+                                        <span class="badge bg-danger">Overloading</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary"><?= htmlspecialchars($event['status']) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars($event['created_at']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-info-circle fa-2x text-info mb-2"></i><br>
+                                No hardware events found. Waiting for sensor data...
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    <?php if ($total_pages > 1): ?>
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <?php if ($page > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
+                        </li>
+                    <?php endif; ?>
+                    
+                    <?php for ($i = max(1, $page - 2); $i <= min($total_pages, $page + 2); $i++): ?>
+                        <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    
+                    <?php if ($page < $total_pages): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+            <div class="text-center text-muted">
+                Showing <?= $offset + 1 ?> to <?= min($offset + $per_page, $total_count) ?> of <?= $total_count ?> hardware events
+            </div>
+        </div>
+    </div>
     <?php endif; ?>
 </div>
+
+<script>
+// Add some visual feedback for data display
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+        if (index < 5) { // Highlight the 5 most recent events
+            row.style.backgroundColor = '#f8f9fa';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 2000);
+        }
+    });
+});
+</script>
 </body>
 </html>

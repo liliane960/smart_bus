@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once '../database/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notification_id'], $_POST['comment'])) {
     $id = $_POST['notification_id'];
@@ -10,5 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['notification_id'], $_
 }
 
 header("Location: view_notifications.php"); // Redirect back
+// header("Location: admin_dashboard.php"); // Redirect back
 exit;
 ?>

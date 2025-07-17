@@ -33,7 +33,7 @@ require_once "../database/db.php";
             <span>Police Dashboard</span>
         </header>
         <main id="main-content">
-            <?php include '../police/view_logs.php'; ?>
+            <?php include '../police/notification_dashboard.php'; ?>
         </main>
         <?php include '../includes/footer.php'; ?>
     </div>

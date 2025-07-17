@@ -69,12 +69,12 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <input type="text" name="search" placeholder="Search by plate number" value="<?= htmlspecialchars($search) ?>" />
     <input type="submit" value="Search" />
 </form>
-<div class="export">
+<!-- <div class="export">
     <a href="../admin/export_logs.php?<?= http_build_query(['search' => $search, 'filter' => $filter]) ?>" 
        style="padding:6px 12px; background:#4CAF50; color:white; text-decoration:none; border-radius:4px;">
        Export to Excel
     </a>
-</div>
+</div> -->
 
 <!-- Filter buttons -->
 <div class="filters">

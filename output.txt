@@ -1,0 +1,71 @@
+9:40.015 -> OK
+05:10:12.786 -> AT
+
+05:10:12.786 -> OK
+05:10:13.905 -> .......WiFi connected! IP: 192.168.10.119
+05:10:18.628 -> System Ready
+05:11:06.146 -> Passenger In - Count: 1
+05:11:06.146 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=1&status=normal&plate_number=RAC123B
+05:11:06.287 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:06.853 -> Passenger In - Count: 2
+05:11:06.853 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=2&status=normal&plate_number=RAC123B
+05:11:06.899 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:07.504 -> Passenger In - Count: 3
+05:11:07.504 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=3&status=normal&plate_number=RAC123B
+05:11:07.504 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:08.067 -> Passenger In - Count: 4
+05:11:08.067 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=4&status=normal&plate_number=RAC123B
+05:11:08.113 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:08.675 -> Passenger In - Count: 5
+05:11:08.675 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=5&status=normal&plate_number=RAC123B
+05:11:08.723 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:09.314 -> Passenger In - Count: 6
+05:11:09.314 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=6&status=normal&plate_number=RAC123B
+05:11:09.314 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:09.922 -> Passenger In - Count: 7
+05:11:09.922 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=7&status=normal&plate_number=RAC123B
+05:11:09.922 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:10.482 -> Passenger In - Count: 8
+05:11:10.482 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=8&status=normal&plate_number=RAC123B
+05:11:10.529 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:11.094 -> Passenger In - Count: 9
+05:11:11.094 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=9&status=normal&plate_number=RAC123B
+05:11:11.141 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:11.703 -> Passenger In - Count: 10
+05:11:11.703 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=10&status=normal&plate_number=RAC123B
+05:11:11.751 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:12.311 -> Passenger In - Count: 11
+05:11:12.311 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=11&status=normal&plate_number=RAC123B
+05:11:12.357 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:12.920 -> Passenger In - Count: 12
+05:11:12.920 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=12&status=normal&plate_number=RAC123B
+05:11:12.968 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:19.936 -> Passenger In - Count: 13
+05:11:19.936 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=13&status=normal&plate_number=RAC123B
+05:11:19.983 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:20.545 -> Passenger In - Count: 14
+05:11:20.545 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=14&status=normal&plate_number=RAC123B
+05:11:20.592 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:21.433 -> Passenger In - Count: 15
+05:11:21.433 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=15&status=normal&plate_number=RAC123B
+05:11:21.433 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:22.138 -> Passenger In - Count: 16
+05:11:22.138 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=16&status=normal&plate_number=RAC123B
+05:11:22.185 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:22.884 -> Passenger In - Count: 17
+05:11:22.884 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=17&status=normal&plate_number=RAC123B
+05:11:22.931 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:23.493 -> Passenger In - Count: 18
+05:11:23.493 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=18&status=full&plate_number=RAC123B
+05:11:23.540 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:28.913 -> Passenger In - Count: 19
+05:11:28.913 -> HTTP GET: http://192.168.10.110/smart-bus/api/hardware_api.php?event=entry&count=19&status=overloading&plate_number=RAC123B
+05:11:28.961 -> HTTP 200: {"success":true,"message":"Data saved"}
+05:11:29.007 -> Sending SMS...
+05:11:29.054 -> AT+CMGF=1
+
+05:11:29.054 -> OK
+05:11:29.569 -> AT+CMGS="+250780830355"
+
+05:11:29.569 -> > Alert: New passengers detected: 19. Current total: 19
+05:11:30.221 -> > SMS sent: New passengers: 19
