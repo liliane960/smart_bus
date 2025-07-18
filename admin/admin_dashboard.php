@@ -100,12 +100,7 @@ require_once "../database/db.php";
                 <li><a href="#" data-page="view_notifications.php">
                     <i class="fas fa-exclamation-triangle"></i> Overloading Notifications
                 </a></li>
-                <li><a href="#" data-page="manage_buses.php">
-                    <i class="fas fa-bus"></i> Manage Bus
-                </a></li>
-                <li><a href="#" data-page="manage_drivers.php">
-                    <i class="fas fa-user-tie"></i> Manage Driver
-                </a></li>
+                <!-- Removed Manage Bus and Manage Driver links -->
             </ul>
         </div>
         <div class="logout-link">

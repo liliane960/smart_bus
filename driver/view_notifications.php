@@ -182,34 +182,12 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-primary comment-btn" 
-                                                onclick="showCommentForm(<?= $event['id'] ?>)">
-                                            <i class="fas fa-comment"></i> Add
-                                        </button>
-                                        <?php if (!empty($event['comment'])): ?>
-                                            <button class="btn btn-sm btn-warning comment-btn" 
-                                                    onclick="showCommentForm(<?= $event['id'] ?>, '<?= htmlspecialchars(addslashes($event['comment'])) ?>')">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                                                        </tr>
-                            <tr id="comment-form-<?= $event['id'] ?>" style="display: none;">
-                                <td colspan="6">
-                                    <div class="comment-form">
-                                        <textarea class="comment-input" id="comment-text-<?= $event['id'] ?>" 
-                                                  placeholder="Enter your comment..."><?= htmlspecialchars($event['comment'] ?? '') ?></textarea>
-                                        <button class="btn btn-sm btn-success comment-btn" 
-                                                onclick="saveComment(<?= $event['id'] ?>)">
-                                            <i class="fas fa-save"></i> Save Comment
-                                        </button>
-                                        <button class="btn btn-sm btn-secondary comment-btn" 
-                                                onclick="hideCommentForm(<?= $event['id'] ?>)">
-                                            <i class="fas fa-times"></i> Cancel
-                                        </button>
-                                    </div>
+                                    <form onsubmit="return saveCommentSimple(event, <?= $event['id'] ?>);">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="comment-input-<?= $event['id'] ?>" placeholder="Add comment..." required>
+                                            <button class="btn btn-success" type="submit">Save</button>
+                                        </div>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -260,99 +238,34 @@ $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-function showCommentForm(eventId, existingComment = '') {
-    console.log('showCommentForm called with eventId:', eventId, 'existingComment:', existingComment);
-    
-    const formRow = document.getElementById('comment-form-' + eventId);
-    const textarea = document.getElementById('comment-text-' + eventId);
-    
-    if (!formRow) {
-        console.error('Form row not found for eventId:', eventId);
-        alert('Error: Form not found');
-        return;
-    }
-    
-    if (!textarea) {
-        console.error('Textarea not found for eventId:', eventId);
-        alert('Error: Textarea not found');
-        return;
-    }
-    
-    // Set the existing comment in the textarea if editing
-    if (existingComment) {
-        textarea.value = existingComment;
-    } else {
-        textarea.value = '';
-    }
-    
-    formRow.style.display = 'table-row';
-    console.log('Form displayed for eventId:', eventId);
-}
-
-function hideCommentForm(eventId) {
-    document.getElementById('comment-form-' + eventId).style.display = 'none';
-}
-
-function saveComment(eventId) {
-    console.log('saveComment called with eventId:', eventId);
-    
-    const textarea = document.getElementById('comment-text-' + eventId);
-    if (!textarea) {
-        console.error('Textarea not found for eventId:', eventId);
-        alert('Error: Textarea not found');
-        return;
-    }
-    
-    const commentText = textarea.value.trim();
-    console.log('Comment text:', commentText);
-    
-    if (!commentText) {
+function saveCommentSimple(e, eventId) {
+    e.preventDefault();
+    const input = document.getElementById('comment-input-' + eventId);
+    const comment = input.value.trim();
+    if (!comment) {
         alert('Please enter a comment');
-        return;
+        return false;
     }
-    
     fetch('../update_comment.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'event_id=' + eventId + '&comment=' + encodeURIComponent(commentText)
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'event_id=' + eventId + '&comment=' + encodeURIComponent(comment)
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update the comment display without reloading the page
-            const commentDisplay = document.getElementById('comment-display-' + eventId);
-            commentDisplay.innerHTML = commentText;
-            commentDisplay.className = 'comment-display';
-            
-            // Update the button group to show both Add and Edit
-            const actionCell = commentDisplay.closest('tr').nextElementSibling.querySelector('td:last-child');
-            actionCell.innerHTML = `
-                <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-primary comment-btn" 
-                            onclick="showCommentForm(${eventId})">
-                        <i class="fas fa-comment"></i> Add
-                    </button>
-                    <button class="btn btn-sm btn-warning comment-btn" 
-                            onclick="showCommentForm(${eventId}, '${commentText.replace(/'/g, "\\'")}')">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                </div>
-            `;
-            
-            // Hide the form
-            hideCommentForm(eventId);
-            
+            document.getElementById('comment-display-' + eventId).innerHTML = comment;
+            document.getElementById('comment-display-' + eventId).className = 'comment-display';
+            input.value = '';
             alert('Comment saved successfully!');
         } else {
             alert('Error saving comment: ' + data.message);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
         alert('Error saving comment');
     });
+    return false;
 }
 </script>
 </body>
